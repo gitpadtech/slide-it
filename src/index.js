@@ -59,9 +59,11 @@ class Slide {
     dom.addEventListener('touchmove', this.moving);
     dom.addEventListener('touchend', this.moveend);
     
-    dom.addEventListener('mousedown', this.movestart);
-    dom.addEventListener('mousemove', this.moving);
-    dom.addEventListener('mouseup', this.moveend);
+    // add support for pc
+    // dom.addEventListener('mousedown', this.movestart);
+    // dom.addEventListener('mousemove', this.moving);
+    // dom.addEventListener('mouseup', this.moveend);
+    // dom.addEventListener('mouseout', this.moveend, true);
 
     this.bound = {
       start: 0,
