@@ -1,0 +1,32 @@
+{
+  "name": "@gitpad/slide-it",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "webpack --config ./webpack.production.js && webpack --config ./webpack.config.js",
+    "build": "webpack --config ./webpack.config.js",
+    "watch": "webpack --config ./webpack.development.js --watch",
+    "ghpages": "git subtree push --prefix examples/ origin gh-pages",
+    "pub": "npm publish --access public"
+  },
+  "keywords": [],
+  "homepage": "https://github.com/gitpadtech/slide-it",
+  "repository": "gitpadtech/slide-it",
+  "license": "MIT",
+  "bugs": {},
+  "author": "yeluoqiuzhi <827884374@qq.com>",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "css-loader": "^0.28.7",
+    "style-loader": "^0.19.0",
+    "webpack": "^3.7.1"
+  },
+  "dependencies": {
+    "d3-ease": "^1.0.3",
+    "d3-timer": "^1.0.7"
+  }
+}
