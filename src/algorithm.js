@@ -5,9 +5,9 @@ export function clamp(min, max) {
 }
 
 export function mapDistance(touchMoveDistance) {
-  return touchMoveDistance / 3;
+  return touchMoveDistance / 2.8;
 }
 
 mapDistance.reverse = function (viewDistance) {
-  return viewDistance * 3;
+  return viewDistance * 2.8;
 }
