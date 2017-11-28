@@ -27,7 +27,7 @@ export function updateLoop(update) {
 /**
  * 
  * @param {HTMLElement} dom 
- * @param {bool} top 
+ * @param {bool} vertical
  */
 export function maxScroll(dom, vertical = true) {
   return vertical ?

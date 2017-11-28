@@ -19,8 +19,8 @@ import './index.css';
  */
 const BOUNCE_DURATION = 600;
 
-// max slide speed === 3.5
-const clampSpeed = clamp(-3.5, 3.5);
+// max slide speed === 1.5
+const clampSpeed = clamp(-1.5, 1.5);
 
 const STATES = {
   DRAGGING: 0,
@@ -116,7 +116,7 @@ export class Slide {
   }
   get friction() {
     // larger when not in bound
-    const force = this.inBound ? 0.12 : 0.12 * 2.5;
+    const force = this.inBound ? 0.018 :  0.2;
     const direction = -Math.sign(this.speed);
     return force * direction;
   }
@@ -156,7 +156,6 @@ export class Slide {
     this.reactMove();
   }
   moveend(e) {
-    console.log('end');
     if (this.overStart) {
       this.switchState(STATES.EASING_TO_START);
     } else if (this.overEnd) {
