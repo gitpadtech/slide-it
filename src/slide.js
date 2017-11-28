@@ -95,6 +95,7 @@ export class Slide {
     return this._currentPosition;
   }
   set currentPosition(val) {
+    this.lastPosition = this._currentPosition;
     this._currentPosition = val;
     const { horizontal } = this.options
     this.movables.forEach((e) => {
@@ -116,7 +117,7 @@ export class Slide {
   }
   get friction() {
     // larger when not in bound
-    const force = this.inBound ? 0.018 :  0.2;
+    const force = this.inBound ? 0.028 :  0.2;
     const direction = -Math.sign(this.speed);
     return force * direction;
   }
@@ -147,7 +148,6 @@ export class Slide {
       this.domNode.dispatchEvent(new Event('touchend'));
     }
 
-    this.lastPosition = this.currentPosition;
     this.lastTouchPosition = this.touchPosition;
     this.touchPosition = this.eventPosition(e);
     this.lastFrameMoment = this.frameMoment;
@@ -228,7 +228,6 @@ export class Slide {
         this.state === STATES.EASING_TO_START ?
           this.bound.start :
           this.bound.end;
-      this.lastPosition = 0;
       this.speed = 0;
       this.switchState(STATES.IDLE);
     }
