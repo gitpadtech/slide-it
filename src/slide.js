@@ -17,15 +17,15 @@ import './index.css';
 /**
  * @type {number} bouncing animation duration
  */
-const BOUNCE_DURATION = 500;
+const BOUNCE_DURATION = 600;
 
 // max slide speed === 3.5
 const clampSpeed = clamp(-3.5, 3.5);
 
 const STATES = {
   DRAGGING: 0,
-  BOUNCING_AT_START: 1,
-  BOUNCING_AT_END: 2,
+  EASING_TO_START: 1,
+  EASING_TO_END: 2,
   IDLE: 3,
   SLIDING: 4,
 };
@@ -62,7 +62,7 @@ export class Slide {
     this.mass = 1;
     this.lastFrameMoment = this.frameMoment =  Date.now();
     this._currentPosition = 0;
-    this._currentSpeed = 0;
+    this._speed = 0;
     updateLoop(this.update.bind(this));
     
   }
@@ -106,19 +106,20 @@ export class Slide {
       );
     });
   }
-  get currentSpeed() {
-    return this._currentSpeed;
+  get speed() {
+    return this._speed;
   }
-  set currentSpeed(val) {
-    this._currentSpeed = clampSpeed(val);
+  set speed(val) {
+    this._speed = clampSpeed(val);
   }
   get acceleratedSpeed() {
+    // accelerated velocity unit in (px/ms²)
     return this.friction / this.mass;
   }
   get friction() {
     // larger when not in bound
-    const force = this.inBound ? 8 : 25;
-    const direction = -Math.sign(this.currentSpeed);
+    const force = this.inBound ? 0.12 : 0.12 * 2.5;
+    const direction = -Math.sign(this.speed);
     return force * direction;
   }
   /**
@@ -126,8 +127,7 @@ export class Slide {
    */
   movestart(e) {
     this.switchState(STATES.DRAGGING);
-    this.currentSpeed = 0;
-    // this.lastPosition = this.currentPosition;
+    this.speed = 0;
     const touchY = this.eventPosition(e);
     this.startTouchPosition = touchY;
     this.lastTouchPosition = touchY;
@@ -151,55 +151,45 @@ export class Slide {
   }
   moveend(e) {
     if (this.overStart) {
-      this.switchState(STATES.BOUNCING_AT_START);
+      this.switchState(STATES.EASING_TO_START);
     } else if (this.overEnd) {
-      this.switchState(STATES.BOUNCING_AT_END);
+      this.switchState(STATES.EASING_TO_END);
     } else {
       this.switchState(STATES.SLIDING);
       // infer ended speed
-      this.currentSpeed = (this.currentPosition - this.lastPosition) / (this.frameMoment - this.lastFrameMoment);
+      this.speed = (this.currentPosition - this.lastPosition) / (this.frameMoment - this.lastFrameMoment);
     }
   }
   update(deltaTime) {
-    const factor = deltaTime / 1000;
     switch (this.state) {
       case (STATES.SLIDING):
-        if (this.friction > 0) {
-          this.currentSpeed = Math.min(0, this.currentSpeed + this.acceleratedSpeed * factor);
-        } else {
-          this.currentSpeed = Math.max(0, this.currentSpeed + this.acceleratedSpeed * factor);
-        }
-        if (this.currentSpeed === 0) {
+        this.slowDown();
+        if (this.speed === 0) {
           if (this.overStart) {
-            this.switchState(STATES.BOUNCING_AT_START);
+            this.switchState(STATES.EASING_TO_START);
           } else if (this.overEnd) {
-            this.switchState(STATES.BOUNCING_AT_END);
+            this.switchState(STATES.EASING_TO_END);
           } else {
             this.switchState(STATES.IDLE);
           }
         } else {
           // sliding
-          this.currentPosition += this.currentSpeed * deltaTime;
+          this.currentPosition += this.speed * deltaTime;
         }
         break;
-      case (STATES.BOUNCING_AT_START):
-        this.bounceElapsed += deltaTime;
-        this.currentPosition = this.bounceStartPosition - this.bounceStartPosition * easeCubicOut(this.bounceElapsed / BOUNCE_DURATION);
-        this.resetOnBouncingEnd();
+      case (STATES.EASING_TO_START):
+        this.ease(deltaTime, this.bounceStartPosition);
         break;
-      case (STATES.BOUNCING_AT_END):
-        this.bounceElapsed += deltaTime;
-        this.currentPosition = this.bounceStartPosition + (this.bound.end - this.bounceStartPosition)
-          * easeCubicOut(this.bounceElapsed / BOUNCE_DURATION)
-        this.resetOnBouncingEnd();
+      case (STATES.EASING_TO_END):
+        this.ease(deltaTime, (this.bounceStartPosition - this.bound.end));
         break;
     }
   }
   switchState(state) {
     if (this.state === state) return;
     switch(state) {
-      case (STATES.BOUNCING_AT_START):
-      case (STATES.BOUNCING_AT_END):
+      case (STATES.EASING_TO_START):
+      case (STATES.EASING_TO_END):
         this.bounceStartPosition = this.currentPosition;
         this.bounceElapsed = 0;
         break;
@@ -213,14 +203,26 @@ export class Slide {
     }
     this.currentPosition += deltaDistance;
   }
+  slowDown() {
+    if (this.friction > 0) {
+      this.speed = Math.min(0, this.speed + this.acceleratedSpeed);
+    } else {
+      this.speed = Math.max(0, this.speed + this.acceleratedSpeed);
+    }
+  }
+  ease(deltaTime, distance) {
+    this.bounceElapsed += deltaTime;
+    this.currentPosition = this.bounceStartPosition - distance * easeCubicOut(this.bounceElapsed / BOUNCE_DURATION);
+    this.resetOnBouncingEnd();
+  }
   resetOnBouncingEnd() {
     if (this.bounceElapsed > BOUNCE_DURATION) {
       this.currentPosition =
-        this.state === STATES.BOUNCING_AT_START ?
+        this.state === STATES.EASING_TO_START ?
           this.bound.start :
           this.bound.end;
       this.lastPosition = 0;
-      this.currentSpeed = 0;
+      this.speed = 0;
       this.switchState(STATES.IDLE);
     }
   }
