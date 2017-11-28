@@ -73,7 +73,6 @@ export class Slide {
     this.moveend = this.moveend.bind(this);
 
     dom.addEventListener('touchstart', this.movestart);
-    dom.addEventListener('touchend', this.moveend);
   }
   _cache() {
     const { horizontal } = this.options;
@@ -157,6 +156,7 @@ export class Slide {
     this.reactMove();
   }
   moveend(e) {
+    console.log('end');
     if (this.overStart) {
       this.switchState(STATES.EASING_TO_START);
     } else if (this.overEnd) {
