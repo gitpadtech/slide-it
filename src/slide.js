@@ -10,10 +10,10 @@ import {
   enableHardwareAcceleration,
   updateLoop,
   maxScroll,
-  transform
+  transform,
+  inViewport
 } from './utils';
 import './index.css';
-
 /**
  * @type {number} bouncing animation duration
  */
@@ -37,7 +37,7 @@ export class Slide {
   constructor(dom, options) {
     resetStyle(dom);
     /**
-     * @type {HTMLElement[]}
+     * @type {HTMLElement}
      */
     this.domNode = dom;
     this.options = options;
@@ -73,7 +73,6 @@ export class Slide {
     this.moveend = this.moveend.bind(this);
 
     dom.addEventListener('touchstart', this.movestart);
-    dom.addEventListener('touchmove', this.moving);
     dom.addEventListener('touchend', this.moveend);
   }
   _cache() {
@@ -126,6 +125,9 @@ export class Slide {
    * @param {Event} e 
    */
   movestart(e) {
+    this.domNode.addEventListener('touchmove', this.moving);
+    this.domNode.addEventListener('touchend', this.moveend);
+    e.preventDefault();
     this.switchState(STATES.DRAGGING);
     this.speed = 0;
     const touchY = this.eventPosition(e);
@@ -138,16 +140,23 @@ export class Slide {
    * @param {Event} e 
    */
   moving(e) {
-    if (this.state == STATES.DRAGGING) {
-      e.preventDefault();
-      this.lastPosition = this.currentPosition;
-      this.lastTouchPosition = this.touchPosition;
-      this.touchPosition = this.eventPosition(e);
-      this.lastFrameMoment = this.frameMoment;
-      this.frameMoment = Date.now();
-
-      this.reactMove();
+    e.preventDefault();
+    const { clientX, clientY } = e.touches[0];
+    // trigger touchend manually
+    if (!inViewport(clientX, clientY)) {
+      // console.log('end');
+      this.domNode.removeEventListener('touchmove', this.moving);
+      console.log('end');
+      this.domNode.dispatchEvent(new Event('touchend'));
     }
+
+    this.lastPosition = this.currentPosition;
+    this.lastTouchPosition = this.touchPosition;
+    this.touchPosition = this.eventPosition(e);
+    this.lastFrameMoment = this.frameMoment;
+    this.frameMoment = Date.now();
+
+    this.reactMove();
   }
   moveend(e) {
     if (this.overStart) {
@@ -159,6 +168,7 @@ export class Slide {
       // infer ended speed
       this.speed = (this.currentPosition - this.lastPosition) / (this.frameMoment - this.lastFrameMoment);
     }
+    this.domNode.removeEventListener('touchend', this.moveend);
   }
   update(deltaTime) {
     switch (this.state) {

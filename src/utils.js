@@ -54,3 +54,13 @@ export const transform = (function () {
     dom.style[key] = cssText;
   }
 })();
+
+export function inViewport(x, y) {
+  if (
+   x > 0 && x < window.innerWidth - 2 &&
+   y > 0 && y < window.innerHeight - 2
+  ) {
+    return true;
+  }
+  return false;
+}
