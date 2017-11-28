@@ -144,9 +144,7 @@ export class Slide {
     const { clientX, clientY } = e.touches[0];
     // trigger touchend manually
     if (!inViewport(clientX, clientY)) {
-      // console.log('end');
       this.domNode.removeEventListener('touchmove', this.moving);
-      console.log('end');
       this.domNode.dispatchEvent(new Event('touchend'));
     }
 
