@@ -29,10 +29,17 @@ export function updateLoop(update) {
  * @param {HTMLElement} dom 
  * @param {bool} vertical
  */
-export function maxScroll(dom, vertical = true) {
-  return vertical ?
-    (dom.scrollHeight - dom.clientHeight) :
-    (dom.scrollWidth - dom.clientWidth);
+export function maxScroll(dom, horizontal = false) {
+  if (horizontal) {
+    return function (childList) {
+      let scrollWidth = 0;
+      childList.forEach(e => scrollWidth += e.clientWidth);
+      return scrollWidth - dom.clientWidth;
+    }
+  }
+  return function () {
+    return (dom.scrollHeight - dom.clientHeight);
+  }
 }
 
 export const transform = (function () {

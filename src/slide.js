@@ -1,6 +1,5 @@
 import { timer } from 'd3-timer';
 import { easeCubicOut } from 'd3-ease';
-import 'core-js/modules/es6.math.sign';
 import {
   clamp,
   mapDistance,
@@ -41,15 +40,16 @@ export class Slide {
      */
     this.domNode = dom;
     this.options = options;
-    this.movables = Array.prototype.slice.call(dom.children, 0);
+    this._cacheChildList();
     this.movables.forEach(enableHardwareAcceleration);
 
     this._attachListener();
+    this._monitorChildList();
     this._cache();
 
     this.bound = {
       start: 0,
-      end: -(options.horizontal ? maxScroll(dom, false) : maxScroll(dom))
+      end: -this._scrollSize(this.movables)
     };
     this.state = STATES.IDLE;
 
@@ -74,13 +74,27 @@ export class Slide {
 
     dom.addEventListener('touchstart', this.movestart);
   }
+  _monitorChildList() {
+    new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        this._cacheChildList();
+      });
+    }).observe(this.domNode, {
+      childList: true
+    });
+  }
+  _cacheChildList() {
+    this.movables = Array.prototype.slice.call(this.domNode.children, 0);
+  }
   _cache() {
     const { horizontal } = this.options;
+
     this.eventPosition = (function(key) {
       return function(event) {
         return event.touches[0][key];
       }
     })(horizontal ? 'clientX' : 'clientY');
+    this._scrollSize = maxScroll(this.domNode, horizontal);
   }
   get inBound() {
     return this.currentPosition <=0 && this.currentPosition >= this.bound.end;
@@ -168,8 +182,11 @@ export class Slide {
     this.domNode.removeEventListener('touchend', this.moveend);
   }
   update(deltaTime) {
+    // read scrollWidth or scrollHeight in every frame
+    this.bound.end = -this._scrollSize(this.movables);
     switch (this.state) {
       case (STATES.SLIDING):
+      case (STATES.IDLE):
         this.slowDown();
         if (this.speed === 0) {
           if (this.overStart) {
