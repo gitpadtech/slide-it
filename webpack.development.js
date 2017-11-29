@@ -25,5 +25,12 @@ module.exports = {
   },
   plugins: [
     new webpack.LoaderOptionsPlugin({ debug: true, minimize: false })
-  ]
+  ],
+  devServer: {
+    contentBase: path.join(__dirname, "examples"),
+    compress: true,
+    port: 9000,
+    hot: true,
+    host: '0.0.0.0',
+  }
 };
