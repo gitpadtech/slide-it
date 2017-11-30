@@ -28,12 +28,16 @@ export function updateLoop(update) {
  * 
  * @param {HTMLElement} dom 
  * @param {bool} vertical
+ * @param {HTMLElement} excludesNodes exclude from calculating scrollWidth
  */
-export function maxScroll(dom, horizontal = false) {
+export function maxScroll(dom, horizontal = false, excludeNodes = []) {
   if (horizontal) {
     return function (childList) {
       let scrollWidth = 0;
-      childList.forEach(e => scrollWidth += e.clientWidth);
+      childList
+        .filter(e => excludeNodes.indexOf(e) === -1)
+        .forEach(e => scrollWidth += e.clientWidth);
+      // debugger;
       return scrollWidth - dom.clientWidth;
     }
   }

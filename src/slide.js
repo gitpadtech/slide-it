@@ -97,7 +97,7 @@ export class Slide {
         return event.touches[0][key];
       }
     })(horizontal ? 'clientX' : 'clientY');
-    this._scrollSize = maxScroll(this.domNode, horizontal);
+    this._scrollSize = maxScroll(this.domNode, horizontal, this.options.excludeWidthNodes);
   }
   get inBound() {
     return this.currentPosition <=0 && this.currentPosition >= this._bound.end;

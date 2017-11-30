@@ -5,7 +5,10 @@ import { Slide } from './slide';
 
 const defaultOptions = {
   horizontal: false,
-  excludeNodes: []
+  // exclude from scroll
+  excludeNodes: [],
+  // exclude from scrollWidth caculating
+  excludeWidthNodes: [],
 };
 
 export function SlideIt(selector, options = {}) {
