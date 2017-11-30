@@ -1,5 +1,5 @@
 import { SlideIt } from "../../src/index";
 
-new SlideIt('.h-slide', {
+window.slides = new SlideIt('.h-slide', {
   horizontal: true
 });

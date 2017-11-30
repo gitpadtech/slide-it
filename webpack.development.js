@@ -28,9 +28,10 @@ module.exports = {
   ],
   devServer: {
     contentBase: path.join(__dirname, "examples"),
-    compress: true,
+    publicPath: "/dist/",
+    // compress: true,
     port: 9000,
-    hot: true,
+    // hot: true,
     host: '0.0.0.0',
   }
 };

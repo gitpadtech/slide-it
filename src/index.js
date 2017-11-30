@@ -18,7 +18,8 @@ export function SlideIt(selector, options = {}) {
      * @type {HTMLElement[]}
      */
     const nodeList = Array.prototype.slice.call(document.querySelectorAll(selector), 0);
-    return nodeList.map(node => new Slide(node, mergeOptions));
+    const nodes = nodeList.map(node => new Slide(node, mergeOptions));
+    return (nodes.length === 1) ? nodes[0] : nodes;
   }
   throw new Error("does't supported params");
 }

@@ -16,7 +16,7 @@ import './index.css';
 /**
  * @type {number} bouncing animation duration
  */
-const BOUNCE_DURATION = 600;
+const EASE_DURATION = 600;
 
 // max slide speed === 1.5
 const clampSpeed = clamp(-1.5, 1.5);
@@ -27,6 +27,7 @@ const STATES = {
   EASING_TO_END: 2,
   IDLE: 3,
   SLIDING: 4,
+  SLIDE_TO: 5,
 };
 
 export class Slide {
@@ -47,20 +48,22 @@ export class Slide {
     this._monitorChildList();
     this._cache();
 
-    this.bound = {
+    this._bound = {
       start: 0,
       end: -this._scrollSize(this.movables)
     };
     this.state = STATES.IDLE;
 
-    this.startTouchPosition = 0;
-    this.lastTouchPosition = 0;
-    this.touchPosition = 0;
-    this.lastPosition = 0;
-    this.bounceStartPosition = 0;
-    this.bounceElapsed = 0;
-    this.mass = 1;
-    this.lastFrameMoment = this.frameMoment =  Date.now();
+    this._startTouchPosition = 0;
+    this._lastTouchPosition = 0;
+    this._touchPosition = 0;
+    this._lastPosition = 0;
+    this._bounceStartPosition = 0;
+    this._easeElapsed = 0;
+    this._slideToStartPosition = 0;
+    this._slideToTargetPosition = 0;
+    this._mass = 1;
+    this._lastFrameMoment = this._frameMoment =  Date.now();
     this._currentPosition = 0;
     this._speed = 0;
     updateLoop(this.update.bind(this));
@@ -97,19 +100,19 @@ export class Slide {
     this._scrollSize = maxScroll(this.domNode, horizontal);
   }
   get inBound() {
-    return this.currentPosition <=0 && this.currentPosition >= this.bound.end;
+    return this.currentPosition <=0 && this.currentPosition >= this._bound.end;
   }
   get overStart() {
     return this.currentPosition > 0;
   }
   get overEnd() {
-    return this.currentPosition < this.bound.end;
+    return this.currentPosition < this._bound.end;
   }
   get currentPosition() {
     return this._currentPosition;
   }
   set currentPosition(val) {
-    this.lastPosition = this._currentPosition;
+    this._lastPosition = this._currentPosition;
     this._currentPosition = val;
     const { horizontal } = this.options
     this.movables.forEach((e) => {
@@ -127,7 +130,7 @@ export class Slide {
   }
   get acceleratedSpeed() {
     // accelerated velocity unit in (px/ms²)
-    return this.friction / this.mass;
+    return this.friction / this._mass;
   }
   get friction() {
     // larger when not in bound
@@ -143,12 +146,11 @@ export class Slide {
     this.domNode.addEventListener('touchend', this.moveend);
     e.preventDefault();
     this.switchState(STATES.DRAGGING);
-    this.speed = 0;
     const touchY = this.eventPosition(e);
-    this.startTouchPosition = touchY;
-    this.lastTouchPosition = touchY;
-    this.touchPosition = touchY;
-    this.frameMoment = Date.now();
+    this._startTouchPosition = touchY;
+    this._lastTouchPosition = touchY;
+    this._touchPosition = touchY;
+    this._frameMoment = Date.now();
   }
   /**
    * @param {Event} e 
@@ -162,10 +164,10 @@ export class Slide {
       this.domNode.dispatchEvent(new Event('touchend'));
     }
 
-    this.lastTouchPosition = this.touchPosition;
-    this.touchPosition = this.eventPosition(e);
-    this.lastFrameMoment = this.frameMoment;
-    this.frameMoment = Date.now();
+    this._lastTouchPosition = this._touchPosition;
+    this._touchPosition = this.eventPosition(e);
+    this._lastFrameMoment = this._frameMoment;
+    this._frameMoment = Date.now();
 
     this.reactMove();
   }
@@ -177,13 +179,13 @@ export class Slide {
     } else {
       this.switchState(STATES.SLIDING);
       // infer ended speed
-      this.speed = (this.currentPosition - this.lastPosition) / (this.frameMoment - this.lastFrameMoment);
+      this.speed = (this.currentPosition - this._lastPosition) / (this._frameMoment - this._lastFrameMoment);
     }
     this.domNode.removeEventListener('touchend', this.moveend);
   }
   update(deltaTime) {
     // read scrollWidth or scrollHeight in every frame
-    this.bound.end = -this._scrollSize(this.movables);
+    this._bound.end = -this._scrollSize(this.movables);
     switch (this.state) {
       case (STATES.SLIDING):
       case (STATES.IDLE):
@@ -202,11 +204,14 @@ export class Slide {
         }
         break;
       case (STATES.EASING_TO_START):
-        this.ease(deltaTime, this.bounceStartPosition);
+        this.easeToNextFrame(deltaTime, this._bounceStartPosition);
         break;
       case (STATES.EASING_TO_END):
-        this.ease(deltaTime, (this.bounceStartPosition - this.bound.end));
+        this.easeToNextFrame(deltaTime, (this._bounceStartPosition - this._bound.end));
         break;
+      case (STATES.SLIDE_TO):
+        const distance = this._slideToStartPosition - this._slideToTargetPosition;
+        this.slideToNextFrame(deltaTime, distance);
     }
   }
   switchState(state) {
@@ -214,14 +219,20 @@ export class Slide {
     switch(state) {
       case (STATES.EASING_TO_START):
       case (STATES.EASING_TO_END):
-        this.bounceStartPosition = this.currentPosition;
-        this.bounceElapsed = 0;
+        this._bounceStartPosition = this.currentPosition;
+        this._easeElapsed = 0;
+        break;
+      case (STATES.DRAGGING):
+        this.speed = 0;
+        break;
+      case (STATES.SLIDE_TO):
+        this._easeElapsed = 0;
         break;
     }
     this.state = state;
   }
   reactMove() {
-    let deltaDistance = this.touchPosition - this.lastTouchPosition;
+    let deltaDistance = this._touchPosition - this._lastTouchPosition;
     if (this.overEnd || this.overStart) {
       deltaDistance = mapDistance(deltaDistance);
     }
@@ -234,19 +245,40 @@ export class Slide {
       this.speed = Math.max(0, this.speed + this.acceleratedSpeed);
     }
   }
-  ease(deltaTime, distance) {
-    this.bounceElapsed += deltaTime;
-    this.currentPosition = this.bounceStartPosition - distance * easeCubicOut(this.bounceElapsed / BOUNCE_DURATION);
+  easeToNextFrame(deltaTime, distance) {
+    this._easeElapsed += deltaTime;
+    this.currentPosition = this._bounceStartPosition - distance * easeCubicOut(this._easeElapsed / EASE_DURATION);
     this.resetOnBouncingEnd();
   }
+  slideToNextFrame(deltTime, distance) {
+    this._easeElapsed += deltTime;
+    this.currentPosition = this._slideToStartPosition - distance * easeCubicOut(this._easeElapsed / EASE_DURATION);
+    if (this._easeElapsed > EASE_DURATION) {
+      this.speed = 0;
+      this.currentPosition = this._slideToTargetPosition;
+      this.switchState(STATES.IDLE);
+    }
+  }
   resetOnBouncingEnd() {
-    if (this.bounceElapsed > BOUNCE_DURATION) {
+    if (this._easeElapsed > EASE_DURATION) {
       this.currentPosition =
         this.state === STATES.EASING_TO_START ?
-          this.bound.start :
-          this.bound.end;
+          this._bound.start :
+          this._bound.end;
       this.speed = 0;
       this.switchState(STATES.IDLE);
     }
+  }
+  // ========= public area =========
+  /**
+   * @public
+   * @param {number} slideToTargetPosition the same as scrollHeight or scrollWidth of HTMLElement
+   */
+  slideTo(scrollPosition) {
+    const { start, end } = this._bound;
+    this._slideToStartPosition = this.currentPosition;
+    this._slideToTargetPosition = clamp(end, start)(-scrollPosition);
+    console.log(this._slideToTargetPosition)
+    this.switchState(STATES.SLIDE_TO);
   }
 }

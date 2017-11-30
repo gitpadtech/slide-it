@@ -1,3 +1,3 @@
 import { SlideIt } from "../../src/index";
 
-new SlideIt('.v-slide');
+window.slideIt = new SlideIt('.v-slide');
