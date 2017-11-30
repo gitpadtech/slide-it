@@ -116,6 +116,7 @@ export class Slide {
     this._currentPosition = val;
     const { horizontal } = this.options
     this.movables.forEach((e) => {
+      if (this.options.excludeNodes.indexOf(e) !== -1) return;
       transform(
         e,
         horizontal ? `translateX(${val}px)` : `translateY(${val}px)`
@@ -278,7 +279,6 @@ export class Slide {
     const { start, end } = this._bound;
     this._slideToStartPosition = this.currentPosition;
     this._slideToTargetPosition = clamp(end, start)(-scrollPosition);
-    console.log(this._slideToTargetPosition)
     this.switchState(STATES.SLIDE_TO);
   }
 }
