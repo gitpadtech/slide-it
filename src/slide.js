@@ -52,6 +52,7 @@ export class Slide {
       start: 0,
       end: -this._scrollSize(this.movables)
     };
+    console.log(this._bound)
     this.state = STATES.IDLE;
 
     this._startTouchPosition = 0;

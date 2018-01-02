@@ -33,12 +33,20 @@ export function updateLoop(update) {
 export function maxScroll(dom, horizontal = false, excludeNodes = []) {
   if (horizontal) {
     return function (childList) {
+      // debugger;
       let scrollWidth = 0;
+      const clientWidth = dom.clientWidth;
       childList
         .filter(e => excludeNodes.indexOf(e) === -1)
         .forEach(e => scrollWidth += e.clientWidth);
       scrollWidth -= dom.clientWidth;
-      return scrollWidth > dom.clientWidth ? scrollWidth : 0;
+      // return scrollWidth;
+      // if (scrollWidth > clientWidth) {
+      //   return 
+      // }
+      return scrollWidth < 0 ? 0 : scrollWidth;
+      // return scrollWidth > dom.clientWidth ? scrollWidth -= dom.clientWidth :
+        // Math.max(scrollWidth, dom.clientWidth);
     }
   }
   return function () {
