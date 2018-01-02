@@ -37,8 +37,8 @@ export function maxScroll(dom, horizontal = false, excludeNodes = []) {
       childList
         .filter(e => excludeNodes.indexOf(e) === -1)
         .forEach(e => scrollWidth += e.clientWidth);
-      // debugger;
-      return scrollWidth - dom.clientWidth;
+      scrollWidth -= dom.clientWidth;
+      return scrollWidth > dom.clientWidth ? scrollWidth : 0;
     }
   }
   return function () {

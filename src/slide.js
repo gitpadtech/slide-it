@@ -52,6 +52,7 @@ export class Slide {
       start: 0,
       end: -this._scrollSize(this.movables)
     };
+    console.log(this._bound);
     this.state = STATES.IDLE;
 
     this._startTouchPosition = 0;
@@ -193,10 +194,13 @@ export class Slide {
         this.slowDown();
         if (this.speed === 0) {
           if (this.overStart) {
+            console.log('etstart');
             this.switchState(STATES.EASING_TO_START);
           } else if (this.overEnd) {
+            console.log('etend');
             this.switchState(STATES.EASING_TO_END);
           } else {
+            console.log('tidle');
             this.switchState(STATES.IDLE);
           }
         } else {
