@@ -42,7 +42,9 @@ export class Slide {
     this.domNode = dom;
     this.options = options;
     this._cacheChildList();
-    this.movables.forEach(enableHardwareAcceleration);
+    this.movables
+      .filter(dom => options.excludeWidthNodes.findIndex(excludeDom => dom === excludeDom) === -1)
+      .forEach(enableHardwareAcceleration);
 
     this._attachListener();
     this._monitorChildList();
